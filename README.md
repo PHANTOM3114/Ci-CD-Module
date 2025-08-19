@@ -1,3 +1,3 @@
-# Ci-CD-Module
+# Pipeline_Module
 
-All Pipelines in One Place
+All Ci/CD Pipelines in One Place
