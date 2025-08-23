@@ -1,108 +1,43 @@
-#include <ctime>
-#include <functional>
 #include <iostream>
-#include <memory>
 #include <string>
-#include <boost/asio.hpp>
+#include <cstdlib>
 
-using boost::asio::ip::tcp;
+#include "boost/asio.hpp"
+#include "httplib.h"
+#include "nlohmann/json.hpp"
 
-std::string make_daytime_string()
-{
-  using namespace std; // For time_t, time and ctime;
-  time_t now = time(0);
-  return ctime(&now);
-}
 
-class tcp_connection
-  : public std::enable_shared_from_this<tcp_connection>
-{
-public:
-  typedef std::shared_ptr<tcp_connection> pointer;
+int main() {
+    const char* token = std::getenv("GITHUB_TOKEN");
 
-  static pointer create(boost::asio::io_context& io_context)
-  {
-    return pointer(new tcp_connection(io_context));
-  }
-
-  tcp::socket& socket()
-  {
-    return socket_;
-  }
-
-  void start()
-  {
-    message_ = make_daytime_string();
-
-    boost::asio::async_write(socket_, boost::asio::buffer(message_),
-        std::bind(&tcp_connection::handle_write, shared_from_this(),
-          boost::asio::placeholders::error,
-          boost::asio::placeholders::bytes_transferred));
-  }
-
-private:
-  tcp_connection(boost::asio::io_context& io_context)
-    : socket_(io_context)
-  {
-  }
-
-  void handle_write(const boost::system::error_code& /*error*/,
-      size_t /*bytes_transferred*/)
-  {
-  }
-
-  tcp::socket socket_;
-  std::string message_;
-};
-
-class tcp_server
-{
-public:
-  tcp_server(boost::asio::io_context& io_context)
-    : io_context_(io_context),
-      acceptor_(io_context, tcp::endpoint(tcp::v4(), 13))
-  {
-    start_accept();
-  }
-
-private:
-  void start_accept()
-  {
-    tcp_connection::pointer new_connection =
-      tcp_connection::create(io_context_);
-
-    acceptor_.async_accept(new_connection->socket(),
-        std::bind(&tcp_server::handle_accept, this, new_connection,
-          boost::asio::placeholders::error));
-  }
-
-  void handle_accept(tcp_connection::pointer new_connection,
-      const boost::system::error_code& error)
-  {
-    if (!error)
-    {
-      new_connection->start();
+    if (token == nullptr) {
+        std::cerr << "Error: GITHUB_TOKEN has not been found." << std::endl;
+        return 1;
     }
 
-    start_accept();
-  }
+    std::string auth_header = "token " + std::string(token);
 
-  boost::asio::io_context& io_context_;
-  tcp::acceptor acceptor_;
-};
+    httplib::Client cli("https://api.github.com");
 
-int main()
-{
-  try
-  {
-    boost::asio::io_context io_context;
-    tcp_server server(io_context);
-    io_context.run();
-  }
-  catch (std::exception& e)
-  {
-    std::cerr << e.what() << std::endl;
-  }
+    httplib::Headers headers = {
+        { "User-Agent", "MetaOS-CiCD-Module-Test/1.0" },
+        { "Accept", "application/vnd.github.v3+json" },
+        { "Authorization", auth_header }
+    };
 
-  return 0;
+    auto res = cli.Get("/repos/PHANTOM3114/MetaOS-Controller/actions/runs", headers);
+
+    if (res) {
+        std::cout << "Status Code: " << res->status << std::endl;
+        if (!res->body.empty()) {
+            nlohmann::json json = nlohmann::json::parse(res->body);
+            std::cout << json.dump(4) << std::endl; // Dump(4) is using for normal printing
+        }
+        return 0;
+    }
+    else {
+        auto err = res.error();
+        std::cerr << "HTTP request failed: " << httplib::to_string(err) << std::endl;
+        return 1;
+    }
 }
