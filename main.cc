@@ -3,41 +3,26 @@
 #include <cstdlib>
 
 #include "boost/asio.hpp"
-#include "httplib.h"
-#include "nlohmann/json.hpp"
 
+namespace local = boost::asio::local;
 
 int main() {
-    const char* token = std::getenv("GITHUB_TOKEN");
+    try {
+        boost::asio::io_context io_context;
+        local::stream_protocol::socket sock(io_context);
 
-    if (token == nullptr) {
-        std::cerr << "Error: GITHUB_TOKEN has not been found." << std::endl;
-        return 1;
-    }
+        sock.connect(local::stream_protocol::endpoint("/tmp/meta_daemon_cicd.sock"));
 
-    std::string auth_header = "token " + std::string(token);
+        std::string message = R"({"pipeline_id": 123, "status": "success"})";
 
-    httplib::Client cli("https://api.github.com");
+        boost::system::error_code error;
+        boost::asio::write(sock, boost::asio::buffer(message), error);
 
-    httplib::Headers headers = {
-        { "User-Agent", "MetaOS-CiCD-Module-Test/1.0" },
-        { "Accept", "application/vnd.github.v3+json" },
-        { "Authorization", auth_header }
-    };
-
-    auto res = cli.Get("/repos/PHANTOM3114/MetaOS-Controller/actions/runs", headers);
-
-    if (res) {
-        std::cout << "Status Code: " << res->status << std::endl;
-        if (!res->body.empty()) {
-            nlohmann::json json = nlohmann::json::parse(res->body);
-            std::cout << json.dump(4) << std::endl; // Dump(4) is using for normal printing
+        if (error) {
+            throw boost::system::system_error(error);
         }
-        return 0;
     }
-    else {
-        auto err = res.error();
-        std::cerr << "HTTP request failed: " << httplib::to_string(err) << std::endl;
-        return 1;
+    catch (std::exception& ec) {
+        std::cerr << "Exception: " << ec.what() << std::endl;
     }
 }
