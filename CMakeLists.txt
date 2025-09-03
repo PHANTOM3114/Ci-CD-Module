@@ -12,10 +12,11 @@ find_path(HTTPLIB_INCLUDE_DIR "httplib.h" REQUIRED)
 
 add_executable(cicd_module main.cc
         src/fetcher.cpp
-        include/fetcher.h)
+)
 
 target_include_directories(cicd_module PRIVATE
         ${HTTPLIB_INCLUDE_DIR}
+        include
 )
 
 target_link_libraries(cicd_module PRIVATE

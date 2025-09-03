@@ -5,7 +5,8 @@
 
 class ActionsDataFetcher {
 public:
-    int StartFetching();
+    std::string StartFetching();
 private:
     const char* token = std::getenv("GITHUB_TOKEN");
+    std::string pipeline_info;
 };
