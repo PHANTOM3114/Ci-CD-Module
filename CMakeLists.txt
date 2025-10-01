@@ -47,8 +47,9 @@ add_custom_command(
         COMMENT "Generating D-Bus C++ interfaces from ${DBUS_INTERFACE_XML}"
 )
 
-add_executable(cicd_module main.cc
+add_executable(cicd_module main.cpp
         src/fetcher.cpp
+        src/sender.cpp
 )
 add_custom_target(generate_dbus_interfaces DEPENDS ${DBUS_ADAPTOR_H} ${DBUS_PROXY_H})
 
