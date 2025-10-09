@@ -10,7 +10,7 @@ ActionsDataFetcher::ActionsDataFetcher()
 
     std::string line;
     bool token_found = false;
-    // Читаємо файл по рядках
+
     while (std::getline(env_file, line)) {
         std::string key = "GITHUB_TOKEN=";
         if (line.rfind(key, 0) == 0) {
