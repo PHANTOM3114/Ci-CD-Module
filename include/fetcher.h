@@ -1,12 +1,16 @@
 #pragma once
+#include <fstream>
+#include <string>
+#include <unordered_map>
 
 #include "httplib.h"
 #include "nlohmann/json.hpp"
-
 class ActionsDataFetcher {
 public:
+    ActionsDataFetcher();
     std::string StartFetching();
+
 private:
-    const char* token = std::getenv("GITHUB_TOKEN");
+    std::string github_token; // make with vector in the future for storing multiple repositories
     std::string pipeline_info;
 };

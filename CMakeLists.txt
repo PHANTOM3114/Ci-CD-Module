@@ -58,6 +58,7 @@ add_dependencies(cicd_module generate_dbus_interfaces)
 target_include_directories(cicd_module PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}/generated
         include
+        ${libenvpp_SOURCE_DIR}/include
 )
 
 target_link_libraries(cicd_module PRIVATE
@@ -67,7 +68,7 @@ target_link_libraries(cicd_module PRIVATE
         httplib
         nlohmann_json::nlohmann_json
         SDBusCpp::sdbus-c++
-        libenvpp
+        libenvpp::libenvpp
         ${SDBUSCPP_GENERATED_INTERFACES_LIB}
 )
 
